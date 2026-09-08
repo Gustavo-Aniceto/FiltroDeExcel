@@ -31,6 +31,7 @@ import { SaveRecipeDialog } from '../recipes/SaveRecipeDialog';
 import { fetchRecipes, recipeKeys, type SavedRecipe } from '../recipes/api';
 import { ExportDialog } from '../export/ExportDialog';
 import { RecipeMenu } from '../recipes/RecipeMenu';
+import { AssistantBar } from '../assistant/AssistantBar';
 import { useRecipe } from './useRecipe';
 
 type Tab = 'dashboard' | 'filters' | 'transform' | 'analysis';
@@ -191,6 +192,17 @@ export function WorkspacePage() {
         <DatasetDashboard profile={profile} />
       ) : (
         <>
+          {/* O assistente fica ACIMA do construtor: ele preenche os paineis,
+              e ver o resultado aparecer nos campos abaixo ensina como o
+              sistema funciona. */}
+          <AssistantBar
+            datasetId={id}
+            onApply={(recipe) => {
+              engine.loadRecipe(recipe);
+              setCurrentRecipe(null);
+            }}
+          />
+
           <section className="rounded-card border border-line bg-surface p-4">
             {tab === 'filters' && (
               <FilterBuilder

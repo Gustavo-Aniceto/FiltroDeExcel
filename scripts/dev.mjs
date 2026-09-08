@@ -51,6 +51,49 @@ if (await has('docker')) {
   }
 }
 
+/**
+ * Uma execucao anterior que nao encerrou direito deixa as portas ocupadas, e o
+ * erro nativo ("EADDRINUSE") nao diz o que fazer. Verificamos antes de subir e
+ * damos a instrucao concreta.
+ */
+async function checkPort(port, label) {
+  const { createServer } = await import('node:net');
+  return new Promise((resolve) => {
+    const probe = createServer();
+    probe.once('error', () => resolve(false));
+    probe.once('listening', () => probe.close(() => resolve(true)));
+    probe.listen(port, '0.0.0.0');
+  });
+}
+
+const PORTS = [
+  [5173, 'frontend'],
+  [3333, 'API'],
+  [8000, 'motor de processamento'],
+];
+
+const busy = [];
+for (const [port, label] of PORTS) {
+  if (!(await checkPort(port, label))) busy.push(`${port} (${label})`);
+}
+
+if (busy.length > 0) {
+  console.error(`
+${color.red('ERRO')} ${color.bold('Estas portas ja estao em uso:')} ${busy.join(', ')}
+
+  Provavelmente uma execucao anterior nao encerrou. Para liberar:
+
+    ${color.cyan(
+      IS_WINDOWS
+        ? 'netstat -ano | findstr :3333     e depois:  taskkill /PID <numero> /F'
+        : 'lsof -ti:3333,5173,8000 | xargs kill',
+    )}
+
+  Ou simplesmente feche o terminal onde o ExcelFlow estava rodando.
+`);
+  process.exit(1);
+}
+
 const services = [
   {
     name: 'api   ',

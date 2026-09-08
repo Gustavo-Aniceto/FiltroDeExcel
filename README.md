@@ -5,10 +5,10 @@ Excel. Em vez de repetir manualmente os mesmos filtros, somas e limpezas a cada
 arquivo recebido, o usuário salva o conjunto de regras uma vez e o reaplica com
 um clique nas planilhas seguintes.
 
-**Estado atual: Fases 1 a 9 concluídas.** O ciclo completo funciona: envie uma
-planilha, monte filtros visualmente, calcule somas e médias, trate os dados,
-exporte o resultado, salve as regras e reaplique com um clique na planilha
-seguinte. Falta a Fase 10 (assistente por linguagem natural, opcional).
+**Estado atual: sistema completo (Fases 1 a 10).** Envie uma planilha, monte
+filtros visualmente, calcule somas e médias, trate os dados, exporte o
+resultado, salve as regras e reaplique com um clique na planilha seguinte —
+ou simplesmente descreva em português o que você quer.
 
 A arquitetura completa está em [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
@@ -101,6 +101,28 @@ Quando aparecer `http://localhost:5173`, abra no navegador.
 
 10. **Confira o histórico** no menu superior: cada exportação fica registrada
     com as regras exatas que rodaram.
+
+### Assistente por linguagem natural (opcional)
+
+Com uma chave da API configurada, aparece um campo acima dos filtros onde você
+descreve o que quer em português:
+
+> *"aprovados acima de 500 reais, sem duplicados, com a soma do valor"*
+
+Para ativar, adicione ao `.env`:
+
+```
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+A chave é obtida em [console.anthropic.com](https://console.anthropic.com).
+**Sem ela o sistema funciona por completo** — apenas o campo não aparece.
+
+**Como isso é seguro:** o assistente não executa nada. Ele produz a mesma
+estrutura de regras que a interface visual produz, validada pelo mesmo schema e
+compilada pelo mesmo compilador parametrizado. Antes de valer, o resultado é
+mostrado traduzido de volta para português — com o que ele *não* conseguiu
+traduzir — e só é aplicado quando você clica em **Aplicar**.
 
 ### Se algo der errado
 

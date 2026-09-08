@@ -71,6 +71,12 @@ const envSchema = z.object({
    */
   MIGRATE_ON_BOOT: booleanFromEnv.optional(),
 
+  /**
+   * Chave do assistente de linguagem natural (Fase 10). OPCIONAL: sem ela o
+   * sistema funciona por completo, apenas sem o campo "descreva o que quer".
+   */
+  ANTHROPIC_API_KEY: z.string().min(10).optional(),
+
   STORAGE_ROOT: z.string().default('./storage'),
   MAX_UPLOAD_BYTES: z.coerce.number().int().min(1024).default(104_857_600),
   DATASET_TTL_HOURS: z.coerce.number().int().min(1).default(72),

@@ -12,7 +12,7 @@
     "dev": "node scripts/dev.mjs",
     "build": "pnpm --filter @excelflow/contracts build && pnpm --filter @excelflow/api build && pnpm --filter @excelflow/web build",
     "typecheck": "pnpm -r typecheck",
-    "test": "pnpm --filter @excelflow/contracts test",
+    "test": "node scripts/test.mjs",
     "migrate": "pnpm --filter @excelflow/api migrate",
     "docker:up": "docker compose up -d --build",
     "docker:down": "docker compose down",

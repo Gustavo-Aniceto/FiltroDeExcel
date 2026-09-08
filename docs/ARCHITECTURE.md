@@ -1,7 +1,7 @@
 # ExcelFlow — Arquitetura
 
 > Documento vivo. Atualizado a cada fase concluída.
-> Versão: 0.3 (Fases 0 a 9)
+> Versão: 1.0 (Fases 0 a 10)
 
 ---
 
@@ -308,6 +308,42 @@ Cada uma dessas regras tem teste (`services/engine/tests/test_inference.py`).
 
 ---
 
+## 5.5 Assistente de linguagem natural (Fase 10)
+
+Opcional: sem `ANTHROPIC_API_KEY` o sistema funciona por completo e o campo não
+aparece.
+
+**O modelo produz uma forma intermediária mais simples que a Receita** — plana,
+sem recursão, com grupos de condições combinados por OU. A Receita real tem
+árvore de profundidade arbitrária e uniões discriminadas por operador; pedir
+isso diretamente a um modelo aumenta a chance de saída inválida sem ganho: um
+pedido em linguagem natural cabe em dois níveis. O **código** — determinístico e
+testado — converte para a Receita completa.
+
+```
+texto em português
+   → modelo (structured outputs, schema fechado)
+   → plano intermediário
+   → conversão em código: cada coluna conferida contra o dataset
+   → recipeSchema.parse()  ← o MESMO schema da interface visual
+   → compilador parametrizado  ← o MESMO compilador
+   → apresentado ao usuário para CONFERÊNCIA
+   → só então aplicado
+```
+
+**Três camadas de defesa, nesta ordem:**
+
+1. O schema de saída é fechado — o modelo só pode nomear operadores que existem.
+2. Toda coluna citada é resolvida contra o perfil do dataset. Um nome inventado
+   vira **aviso ao usuário**, não filtro.
+3. A Receita resultante passa pelo `recipeSchema` e pelo compilador, que
+   revalida colunas e vincula todo valor como parâmetro.
+
+O assistente **propõe**; a pessoa **aplica**. Um filtro errado aplicado em
+silêncio produz um número plausível e errado — que alguém leva para uma reunião.
+
+---
+
 ## 6. Banco de dados (SQL Server)
 
 Convenções: `UNIQUEIDENTIFIER` com `NEWSEQUENTIALID()` como PK (evita fragmentação de índice
@@ -459,5 +495,5 @@ por índices simples.
 | 7 | Exportação Excel/CSV com aba de resumo | ✅ |
 | 8 | Receitas salvas e reaplicação | ✅ |
 | 9 | Histórico de execuções | ✅ |
-| 10 | IA: linguagem natural → Receita validada | ⬜ |
+| 10 | IA: linguagem natural → Receita validada | ✅ |
 | 11 | Endurecimento de segurança e otimização | ⬜ |

@@ -8,6 +8,7 @@ import { authRoutes } from './modules/auth/auth.routes.js';
 import { datasetRoutes } from './modules/datasets/datasets.routes.js';
 import { queryRoutes } from './modules/datasets/query.routes.js';
 import { recipeRoutes } from './modules/recipes/recipes.routes.js';
+import { aiRoutes } from './modules/ai/ai.routes.js';
 import { healthRoutes } from './modules/health/health.routes.js';
 
 export const API_PREFIX = '/api/v1';
@@ -70,6 +71,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   // /executions), entao recebe apenas o prefixo da versao.
   await app.register(queryRoutes, { prefix: API_PREFIX });
   await app.register(recipeRoutes, { prefix: `${API_PREFIX}/recipes` });
+  await app.register(aiRoutes, { prefix: `${API_PREFIX}/ai` });
 
   return app;
 }
