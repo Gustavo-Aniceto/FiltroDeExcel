@@ -1,7 +1,7 @@
 # ExcelFlow — Arquitetura
 
 > Documento vivo. Atualizado a cada fase concluída.
-> Versão: 0.1 (Fase 0 + Fase 1)
+> Versão: 0.2 (Fases 0 a 2)
 
 ---
 
@@ -280,6 +280,34 @@ mais um produtor de receitas, sem privilégio nenhum.
 
 ---
 
+## 5.4 Inferência de tipos na ingestão
+
+O problema que justifica esta seção: planilhas exportadas de sistemas legados
+trazem **números e datas como texto, no formato brasileiro**. A coluna
+"Valor da operação" chega como `"R$ 1.234,56"` e "Data" como `"01/09/2026"`.
+Tratadas como texto, o usuário não consegue somar nem filtrar por período — que
+é exatamente o que ele veio fazer.
+
+A inferência opera em duas etapas: decide o tipo a partir de uma **amostra**
+(1000 valores, em Python puro), depois converte a coluna inteira com **uma
+expressão Polars vetorizada**.
+
+Regras que exigiram decisão:
+
+| Situação | Decisão | Por quê |
+|---|---|---|
+| `1.234` é 1234 ou 1,234? | Se **qualquer** valor da coluna usa vírgula decimal, o ponto é separador de milhar **na coluna toda** | Decidir célula a célula produziria escalas misturadas na mesma coluna — erro grave e silencioso num relatório financeiro |
+| `03/09/2026` | 3 de setembro (dia antes do mês) | Público brasileiro; a ordem inversa corromperia todo filtro por período |
+| `(1.234,56)` | −1234,56 | Parênteses contábeis são negativo |
+| 1 célula suja em 10 | Coluna continua numérica; a célula vira nulo | Uma sujeira não pode custar ao usuário a capacidade de somar a coluna |
+| `"0"` e `"1"` | Número, não booleano | Aparecem como número muito mais vezes |
+| `-`, `N/A`, `não informado` | Nulo | Para que "está vazio" funcione independentemente da convenção da planilha |
+| CSV com `;` e latin-1 | Detectados e transcodificados | Padrão de exportação brasileiro — vírgula já é o separador decimal |
+
+Cada uma dessas regras tem teste (`services/engine/tests/test_inference.py`).
+
+---
+
 ## 6. Banco de dados (SQL Server)
 
 Convenções: `UNIQUEIDENTIFIER` com `NEWSEQUENTIALID()` como PK (evita fragmentação de índice
@@ -331,12 +359,16 @@ Implementado na Fase 1:
 | `POST` | `/auth/logout` | Revoga a sessão atual |
 | `POST` | `/auth/logout-all` | Revoga todas as sessões do usuário |
 | `GET` | `/auth/me` | Usuário autenticado |
+| `POST` | `/datasets` | Upload multipart; devolve dataset + perfil das colunas |
+| `GET` | `/datasets` | Lista paginada das planilhas do usuário |
+| `GET` | `/datasets/:id` | Metadados + perfil completo das colunas |
+| `DELETE` | `/datasets/:id` | Remove registro e arquivos |
 
 Planejado (fases seguintes):
 
 | Fase | Rotas |
 |---|---|
-| 2 | `POST /datasets` (upload) · `GET /datasets` · `GET /datasets/:id` · `GET /datasets/:id/profile` · `DELETE /datasets/:id` |
+| ~~2~~ | *implementado — ver tabela acima* |
 | 3 | `POST /datasets/:id/rows` (paginação + ordenação + busca) |
 | 4–6 | `POST /datasets/:id/preview` (receita → prévia) · `POST /datasets/:id/execute` |
 | 7 | `POST /executions/:id/export` · `GET /exports/:id/download` |
@@ -400,8 +432,16 @@ específico no login (contra força bruta).
 **Auditoria** — login, logout, upload, execução e export gravados em `audit_logs`. Logs estruturados
 (Pino) com `requestId`, **sem** dados de planilha e **sem** segredos.
 
-**Retenção** — arquivos apagados automaticamente após `DATASET_TTL_HOURS`. Dado da empresa não fica
-parado no servidor indefinidamente.
+**Retenção** — uma rotina horária apaga os **arquivos** de datasets vencidos e marca o registro como
+`expired`. A linha e o perfil das colunas permanecem: o histórico precisa continuar dizendo o que foi
+processado, mesmo depois que o dado sumiu. Dado da empresa não fica parado no servidor
+indefinidamente.
+
+**Índices filtrados: evitados deliberadamente** — SQL Server exige `SET QUOTED_IDENTIFIER ON` para
+qualquer DML numa tabela que tenha índice filtrado (`Msg 1934`). O driver TDS do Node usa `ON`, mas
+sqlcmd em certos modos, jobs do SQL Agent e várias ferramentas de ETL usam `OFF` — e falhariam ao
+escrever. O ganho era marginal (uma linha por upload, não milhões); a migration `0003` os substituiu
+por índices simples.
 
 ---
 
@@ -411,7 +451,7 @@ parado no servidor indefinidamente.
 |---|---|---|
 | 0 | Monorepo, Docker, contratos, migrations | ✅ |
 | 1 | Autenticação ponta a ponta, esqueleto dos 3 apps | ✅ |
-| 2 | Upload, conversão para Parquet, perfilamento, dashboard | ⬜ |
+| 2 | Upload, conversão para Parquet, perfilamento, dashboard | ✅ |
 | 3 | Grade paginada e virtualizada | ⬜ |
 | 4 | Construtor visual de filtros | ⬜ |
 | 5 | Filtros combinados AND/OR aninhados | ⬜ |

@@ -3,10 +3,14 @@ import { buildApp } from './app.js';
 import { closePool, getPool } from './db/pool.js';
 import { runMigrations } from './db/migrator.js';
 import { ensureDatabaseExists } from './db/bootstrap.js';
+import { ensureStorageDirectories } from './lib/storage.js';
+import { scheduleRetention } from './modules/datasets/retention.js';
 
 const app = await buildApp();
 
 try {
+  await ensureStorageDirectories();
+
   // Em desenvolvimento, criar o banco no boot elimina um passo manual que
   // todo mundo esquece na primeira execucao.
   if (!env.isProduction) {
@@ -34,6 +38,8 @@ try {
   process.exit(1);
 }
 
+const stopRetention = scheduleRetention(app.log);
+
 try {
   await app.listen({ port: env.API_PORT, host: env.API_HOST });
   app.log.info(`API disponivel em http://localhost:${env.API_PORT}/api/v1`);
@@ -54,6 +60,7 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
     shuttingDown = true;
     app.log.info(`Recebido ${signal}, encerrando...`);
     try {
+      stopRetention();
       await app.close();
       await closePool();
       process.exit(0);

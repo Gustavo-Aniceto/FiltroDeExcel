@@ -1,9 +1,11 @@
+import multipart from '@fastify/multipart';
 import Fastify, { type FastifyInstance } from 'fastify';
 import { env } from './config/env.js';
 import { registerAuth } from './plugins/auth.js';
 import { registerErrorHandler } from './plugins/error-handler.js';
 import { registerSecurity } from './plugins/security.js';
 import { authRoutes } from './modules/auth/auth.routes.js';
+import { datasetRoutes } from './modules/datasets/datasets.routes.js';
 import { healthRoutes } from './modules/health/health.routes.js';
 
 export const API_PREFIX = '/api/v1';
@@ -44,11 +46,24 @@ export async function buildApp(): Promise<FastifyInstance> {
   });
 
   await registerSecurity(app);
+
+  // Uploads sao consumidos como STREAM (`attachFieldsToBody` fica desligado):
+  // bufferizar uma planilha de 100 MB na memoria do processo derrubaria a API
+  // com poucos envios simultaneos.
+  await app.register(multipart, {
+    limits: {
+      fileSize: env.MAX_UPLOAD_BYTES,
+      files: 1,
+      fieldSize: 1_048_576,
+    },
+  });
+
   registerAuth(app);
   registerErrorHandler(app);
 
   await app.register(healthRoutes, { prefix: `${API_PREFIX}/health` });
   await app.register(authRoutes, { prefix: `${API_PREFIX}/auth` });
+  await app.register(datasetRoutes, { prefix: `${API_PREFIX}/datasets` });
 
   return app;
 }

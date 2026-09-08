@@ -5,8 +5,8 @@ Excel. Em vez de repetir manualmente os mesmos filtros, somas e limpezas a cada
 arquivo recebido, o usuário salva o conjunto de regras uma vez e o reaplica com
 um clique nas planilhas seguintes.
 
-**Estado atual: Fase 1 concluída** — arquitetura, banco de dados e autenticação
-funcionando ponta a ponta. O upload de planilhas chega na Fase 2.
+**Estado atual: Fase 2 concluída** — envie uma planilha e veja a análise
+automática da estrutura, dos tipos e dos valores. Filtros chegam na Fase 4.
 
 A arquitetura completa está em [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
@@ -129,9 +129,20 @@ curl -X POST $API/auth/register -H 'Content-Type: application/json' -c /tmp/c.tx
 curl -X POST $API/auth/refresh -b /tmp/c.txt -c /tmp/c.txt
 ```
 
-**Teste de segurança relevante:** reapresente um refresh token já usado. A
-resposta deve ser 401 e *todas* as sessões daquela família devem ser revogadas —
-é a detecção de reúso de token em ação.
+Upload de uma planilha:
+
+```bash
+curl -X POST $API/datasets -H "Authorization: Bearer $TOKEN" -F "file=@base.xlsx"
+```
+
+**Testes de segurança relevantes:**
+
+- Reapresente um refresh token já usado → 401, e *todas* as sessões daquela
+  família são revogadas (detecção de reúso).
+- Renomeie qualquer arquivo binário para `.xlsx` e envie → rejeitado pelos
+  *magic bytes*, não pela extensão.
+- Peça `GET /datasets/:id` de outra conta → 404, não 403 (não confirma
+  a existência do recurso).
 
 ---
 

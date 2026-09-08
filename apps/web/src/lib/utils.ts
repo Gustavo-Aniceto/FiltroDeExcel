@@ -44,3 +44,18 @@ export function formatDateTime(iso: string | null | undefined): string {
     timeStyle: 'short',
   }).format(date);
 }
+
+/**
+ * Formata um valor categorico para exibicao.
+ *
+ * O motor devolve booleanos serializados como "true"/"false" -- correto no
+ * dado, ruim na tela: o usuario escreveu "Sim"/"Nao" na planilha dele e espera
+ * ver "Sim"/"Nao" de volta.
+ */
+export function formatCategoryValue(value: string, columnType: string): string {
+  if (columnType !== 'boolean') return value;
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'true') return 'Sim';
+  if (normalized === 'false') return 'Nao';
+  return value;
+}

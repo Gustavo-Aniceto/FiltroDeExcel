@@ -154,6 +154,68 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   return (await response.json()) as T;
 }
 
+/**
+ * Upload com progresso.
+ *
+ * Usamos XMLHttpRequest, e nao fetch: fetch ainda nao expoe progresso de
+ * UPLOAD em nenhum navegador. Como uma planilha de 100 MB leva dezenas de
+ * segundos, uma barra parada em "enviando..." faz o usuario achar que travou e
+ * recarregar a pagina no meio do envio.
+ */
+export function uploadFile<T>(
+  path: string,
+  file: File,
+  options: { onProgress?: (percent: number) => void; signal?: AbortSignal } = {},
+): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const form = new FormData();
+    form.append('file', file);
+
+    const request = new XMLHttpRequest();
+    request.open('POST', `${BASE_URL}${path}`);
+    request.withCredentials = true;
+    if (accessToken) request.setRequestHeader('Authorization', `Bearer ${accessToken}`);
+
+    request.upload.addEventListener('progress', (event) => {
+      if (event.lengthComputable && options.onProgress) {
+        options.onProgress(Math.round((event.loaded / event.total) * 100));
+      }
+    });
+
+    request.addEventListener('load', () => {
+      if (request.status >= 200 && request.status < 300) {
+        resolve(request.responseText ? (JSON.parse(request.responseText) as T) : (undefined as T));
+        return;
+      }
+
+      let code: ErrorCode = 'INTERNAL_ERROR';
+      let message = 'Nao foi possivel enviar o arquivo.';
+      let details: ApiErrorDetail[] = [];
+      try {
+        const body = JSON.parse(request.responseText) as ApiErrorBody;
+        if (body?.error) {
+          code = body.error.code ?? code;
+          message = body.error.message ?? message;
+          details = body.error.details ?? [];
+        }
+      } catch {
+        // Resposta sem JSON: mantem a mensagem padrao.
+      }
+      reject(new ApiError(code, message, request.status, details));
+    });
+
+    request.addEventListener('error', () =>
+      reject(new ApiError('INTERNAL_ERROR', 'Falha de conexao durante o envio.', 0)),
+    );
+    request.addEventListener('abort', () =>
+      reject(new ApiError('INTERNAL_ERROR', 'Envio cancelado.', 0)),
+    );
+
+    options.signal?.addEventListener('abort', () => request.abort());
+    request.send(form);
+  });
+}
+
 export const api = {
   get: <T>(path: string, signal?: AbortSignal) => apiRequest<T>(path, { method: 'GET', signal }),
   post: <T>(path: string, body?: unknown, signal?: AbortSignal) =>

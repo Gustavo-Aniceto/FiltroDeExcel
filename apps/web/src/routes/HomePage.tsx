@@ -1,86 +1,70 @@
-import { CheckCircle2, Circle, UploadCloud } from 'lucide-react';
+import { useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
-import { useAuth } from '@/features/auth/AuthContext';
-
-/**
- * Placeholder da Fase 1.
- *
- * Na Fase 2 esta tela vira a area de upload ("Arraste sua planilha aqui") e a
- * lista de planilhas recentes. Por enquanto ela confirma que a sessao
- * autenticada funciona ponta a ponta e mostra o roadmap.
- */
-const ROADMAP: Array<{ phase: string; title: string; done: boolean }> = [
-  { phase: 'Fase 1', title: 'Arquitetura, banco de dados e autenticacao', done: true },
-  { phase: 'Fase 2', title: 'Upload, leitura da planilha e dashboard automatico', done: false },
-  { phase: 'Fase 3', title: 'Visualizacao em tabela paginada', done: false },
-  { phase: 'Fase 4', title: 'Construtor visual de filtros', done: false },
-  { phase: 'Fase 5', title: 'Filtros combinados com E / OU', done: false },
-  { phase: 'Fase 6', title: 'Somas, medias e contagens', done: false },
-  { phase: 'Fase 7', title: 'Exportacao para Excel e CSV', done: false },
-  { phase: 'Fase 8', title: 'Regras salvas e reaplicacao', done: false },
-  { phase: 'Fase 9', title: 'Historico de processamentos', done: false },
-  { phase: 'Fase 10', title: 'Assistente por linguagem natural', done: false },
-  { phase: 'Fase 11', title: 'Endurecimento de seguranca e performance', done: false },
-];
+import { Spinner } from '@/components/ui/Spinner';
+import { DatasetList } from '@/features/datasets/DatasetList';
+import { datasetKeys, deleteDataset, fetchDatasets, uploadDataset } from '@/features/datasets/api';
+import { UploadDropzone } from '@/features/upload/UploadDropzone';
 
 export default function HomePage() {
-  const { user } = useAuth();
-  const firstName = user?.displayName.split(' ')[0] ?? '';
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const { data, isLoading } = useQuery({
+    queryKey: datasetKeys.list(1),
+    queryFn: () => fetchDatasets(1, 20),
+  });
+
+  const removeMutation = useMutation({
+    mutationFn: deleteDataset,
+    onMutate: (id: string) => setDeletingId(id),
+    onSettled: () => {
+      setDeletingId(null);
+      void queryClient.invalidateQueries({ queryKey: datasetKeys.all });
+    },
+  });
+
+  async function handleUpload(file: File, onProgress: (percent: number) => void) {
+    const profile = await uploadDataset(file, onProgress);
+    // Semeia o cache com o perfil que acabou de chegar: a navegacao para o
+    // dashboard fica instantanea, sem um segundo GET do que ja temos em maos.
+    queryClient.setQueryData(datasetKeys.detail(profile.dataset.id), profile);
+    void queryClient.invalidateQueries({ queryKey: datasetKeys.all });
+    navigate(`/planilhas/${profile.dataset.id}`);
+  }
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-content">
-          Ola, {firstName}
-        </h1>
+        <h1 className="text-2xl font-semibold text-content">Planilhas</h1>
         <p className="mt-1 text-sm text-content-muted">
-          Sua conta esta ativa. O envio de planilhas chega na proxima fase.
+          Envie uma planilha para ver a analise automatica da estrutura e dos valores.
         </p>
       </div>
 
-      <Card>
-        <CardBody className="flex flex-col items-center justify-center gap-3 border-2 border-dashed border-line-strong py-14 text-center">
-          <div className="flex size-12 items-center justify-center rounded-full bg-surface-sunken">
-            <UploadCloud className="size-6 text-content-subtle" aria-hidden="true" />
-          </div>
-          <div>
-            <p className="font-medium text-content">Arraste sua planilha aqui</p>
-            <p className="mt-1 text-sm text-content-subtle">
-              .xlsx, .xls ou .csv &mdash; disponivel na Fase 2
-            </p>
-          </div>
-        </CardBody>
-      </Card>
+      <UploadDropzone onUpload={handleUpload} />
 
       <Card>
         <CardHeader
-          title="Roadmap"
-          description="O que ja funciona e o que vem a seguir."
+          title="Enviadas recentemente"
+          description={
+            data ? `${data.total} planilha(s) no total` : 'Carregando planilhas enviadas'
+          }
         />
         <CardBody className="p-0">
-          <ul className="divide-y divide-line">
-            {ROADMAP.map((item) => (
-              <li key={item.phase} className="flex items-center gap-3 px-5 py-3">
-                {item.done ? (
-                  <CheckCircle2 className="size-4 shrink-0 text-success" aria-hidden="true" />
-                ) : (
-                  <Circle className="size-4 shrink-0 text-line-strong" aria-hidden="true" />
-                )}
-                <span className="w-16 shrink-0 text-xs font-medium text-content-subtle">
-                  {item.phase}
-                </span>
-                <span
-                  className={
-                    item.done
-                      ? 'text-sm text-content'
-                      : 'text-sm text-content-muted'
-                  }
-                >
-                  {item.title}
-                </span>
-              </li>
-            ))}
-          </ul>
+          {isLoading ? (
+            <div className="flex justify-center py-8">
+              <Spinner label="Carregando planilhas" />
+            </div>
+          ) : (
+            <DatasetList
+              datasets={data?.items ?? []}
+              deletingId={deletingId}
+              onDelete={(id) => removeMutation.mutate(id)}
+            />
+          )}
         </CardBody>
       </Card>
     </div>

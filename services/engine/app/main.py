@@ -15,7 +15,7 @@ from fastapi.responses import JSONResponse
 from starlette.requests import Request
 
 from app.config import get_settings
-from app.routers import health
+from app.routers import health, ingestion
 from app.security import require_internal_auth
 
 logging.basicConfig(
@@ -65,8 +65,9 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
 # saude do container sem carregar segredo.
 app.include_router(health.router)
 
-# Todo o restante do engine exige o segredo compartilhado. As rotas de
-# ingestao, execucao e exportacao entram aqui a partir da Fase 2.
+# Todo o restante do engine exige o segredo compartilhado, aplicado como
+# dependencia no proprio router.
+app.include_router(ingestion.router)
 
 
 @app.get("/internal/ping", dependencies=[Depends(require_internal_auth)])
