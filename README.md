@@ -33,73 +33,77 @@ histórico — nunca as linhas da planilha.
 
 ---
 
-## Pré-requisitos
+## Como rodar
 
-- Node.js ≥ 20.11 e pnpm ≥ 10
-- Python ≥ 3.11
-- Docker (para o SQL Server local)
+### Pré-requisitos
 
----
+| | Onde obter | Observação |
+|---|---|---|
+| **Node.js 20+** | [nodejs.org](https://nodejs.org) | Escolha a versão LTS |
+| **pnpm** | `npm install -g pnpm` | |
+| **Python 3.11+** | [python.org](https://www.python.org/downloads/) | No Windows, marque **"Add Python to PATH"** no instalador |
+| **Docker Desktop** | [docker.com](https://www.docker.com/products/docker-desktop/) | Só para o SQL Server. Deixe-o **aberto** antes de começar |
 
-## Como executar
-
-### 1. Configuração
-
-```bash
-cp .env.example .env
-```
-
-Para desenvolvimento local os valores padrão já funcionam. **Em produção**, gere
-segredos reais — a API se recusa a subir com os valores de exemplo:
+### Um comando
 
 ```bash
-node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
+pnpm dev
 ```
 
-### 2. Banco de dados
+Na primeira execução ele prepara tudo sozinho: cria o `.env`, sobe o SQL Server,
+instala as dependências, compila os contratos, monta o ambiente Python e aplica
+as migrations. Leva alguns minutos. Nas execuções seguintes, sobe em segundos.
+
+Quando aparecer `http://localhost:5173`, abra no navegador.
+
+> **Mac com chip Apple (M1/M2/M3/M4):** a Microsoft não publica imagem ARM do
+> SQL Server. Nas configurações do Docker Desktop, ative
+> *General → Use Rosetta for x86/amd64 emulation* antes de rodar.
+
+### Primeiros passos no sistema
+
+1. **Crie sua conta** na primeira tela — a primeira conta vira administradora.
+2. **Arraste uma planilha** da pasta `samples/`:
+
+   | Arquivo | O que exercita |
+   |---|---|
+   | `operacoes.xlsx` | 8.000 linhas com tipos nativos do Excel, duplicidades e campos vazios |
+   | `operacoes_texto_brasileiro.xlsx` | O caso difícil: `R$ 1.234,56` e `01/09/2026` como **texto**, além de `Sim/Não` e marcadores `N/A` |
+   | `operacoes_latin1.csv` | CSV brasileiro de verdade: separador `;` e acentuação latin-1 |
+
+3. **Veja o dashboard** montado a partir das colunas encontradas.
+
+   Vale conferir se o sistema acertou: no arquivo de texto brasileiro, a coluna
+   *Valor da operação* deve aparecer como **Moeda** com soma calculada — e não
+   como texto. É esse reconhecimento que torna as próximas fases possíveis.
+
+### Se algo der errado
+
+| Sintoma | Causa provável |
+|---|---|
+| `docker: command not found` | Docker Desktop não está aberto |
+| `porta 3333 já em uso` | Uma execução anterior ficou viva — feche o terminal e abra outro |
+| SQL Server não fica pronto | Veja `docker compose logs sqlserver`; costuma ser falta de memória (precisa de ~2 GB) |
+| Erro de Python no `pnpm dev` | Apague `services/engine/.venv` e rode `pnpm bootstrap` |
+
+Para recomeçar do zero, apagando inclusive o banco:
 
 ```bash
-pnpm infra:up          # sobe o SQL Server 2022 em container
+docker compose down -v
+pnpm bootstrap
 ```
 
-Aguarde o container ficar saudável (~30 s na primeira vez):
+### Alternativa: tudo em contêiner
+
+Se preferir não instalar Node e Python na máquina, o sistema inteiro roda em
+contêineres:
 
 ```bash
-docker inspect --format='{{.State.Health.Status}}' excelflow-sqlserver
+docker compose up -d --build     # depois abra http://localhost:8080
 ```
 
-### 3. Dependências
-
-```bash
-pnpm install
-pnpm --filter @excelflow/contracts build    # os outros pacotes dependem disto
-
-cd services/engine
-python3 -m venv .venv && ./.venv/bin/pip install -r requirements.txt
-cd ../..
-```
-
-### 4. Migrations
-
-```bash
-pnpm migrate           # cria o banco (se preciso) e aplica as migrations
-```
-
-### 5. Subir os serviços
-
-```bash
-pnpm dev               # API (:3333) + frontend (:5173) em paralelo
-```
-
-E, em outro terminal, o motor de processamento:
-
-```bash
-cd services/engine
-./.venv/bin/python -m uvicorn app.main:app --reload --port 8000
-```
-
-Acesse **http://localhost:5173**. A primeira conta criada recebe papel de
-administrador automaticamente.
+Mais lento para desenvolver (não há *hot reload*), mas não exige nada além do
+Docker.
 
 ---
 
@@ -108,41 +112,35 @@ administrador automaticamente.
 ### Testes automatizados
 
 ```bash
-pnpm --filter @excelflow/contracts test     # motor de regras: AST e receitas
-pnpm typecheck                              # verificação de tipos completa
+pnpm test          # motor de regras: AST de filtros e receitas
+pnpm typecheck     # verificação de tipos nos três pacotes
 
 cd services/engine
-ENGINE_SHARED_SECRET=segredo-de-teste ./.venv/bin/python -m pytest -q
+./.venv/bin/python -m pytest -q      # inferência de tipos e ingestão
 ```
+
+No Windows, o último comando é `.venv\Scripts\python -m pytest -q`.
 
 ### Verificação manual da API
 
 ```bash
 API=http://localhost:3333/api/v1
 
-curl $API/health/ready
+TOKEN=$(curl -s -X POST $API/auth/login -H 'Content-Type: application/json' \
+  -d '{"email":"voce@empresa.com","password":"sua-senha"}' | jq -r .accessToken)
 
-curl -X POST $API/auth/register -H 'Content-Type: application/json' -c /tmp/c.txt \
-  -d '{"email":"voce@empresa.com","password":"uma-senha-bem-longa","displayName":"Seu Nome"}'
-
-# Rotação do refresh token
-curl -X POST $API/auth/refresh -b /tmp/c.txt -c /tmp/c.txt
+curl -X POST $API/datasets -H "Authorization: Bearer $TOKEN" \
+  -F "file=@samples/operacoes.xlsx"
 ```
 
-Upload de uma planilha:
+**Testes de segurança que valem a pena repetir:**
 
-```bash
-curl -X POST $API/datasets -H "Authorization: Bearer $TOKEN" -F "file=@base.xlsx"
-```
-
-**Testes de segurança relevantes:**
-
-- Reapresente um refresh token já usado → 401, e *todas* as sessões daquela
-  família são revogadas (detecção de reúso).
-- Renomeie qualquer arquivo binário para `.xlsx` e envie → rejeitado pelos
-  *magic bytes*, não pela extensão.
-- Peça `GET /datasets/:id` de outra conta → 404, não 403 (não confirma
-  a existência do recurso).
+- Renomeie qualquer arquivo (um `.pdf`, um `.exe`) para `.xlsx` e envie →
+  rejeitado pelos *magic bytes*, não pela extensão.
+- Reapresente um refresh token já usado → 401, e **todas** as sessões daquela
+  família são revogadas (detecção de reúso de token).
+- Peça `GET /datasets/:id` de outra conta → **404**, não 403: a API não confirma
+  sequer que o recurso existe.
 
 ---
 
@@ -150,12 +148,14 @@ curl -X POST $API/datasets -H "Authorization: Bearer $TOKEN" -F "file=@base.xlsx
 
 | Comando | O que faz |
 |---|---|
-| `pnpm dev` | API + frontend em paralelo |
-| `pnpm dev:api` / `pnpm dev:web` | Apenas um dos dois |
-| `pnpm build` | Build de produção de tudo |
-| `pnpm typecheck` | Verificação de tipos em todos os pacotes |
+| `pnpm dev` | Sobe os três serviços (prepara o ambiente na primeira vez) |
+| `pnpm bootstrap` | Só a preparação do ambiente |
+| `pnpm test` | Testes do motor de regras |
+| `pnpm typecheck` | Verificação de tipos |
+| `pnpm build` | Build de produção |
 | `pnpm migrate` | Aplica migrations pendentes |
-| `pnpm infra:up` / `pnpm infra:down` | Sobe/derruba o SQL Server |
+| `pnpm db:up` / `pnpm db:down` | Sobe/para apenas o SQL Server |
+| `pnpm docker:up` / `pnpm docker:down` | Sistema inteiro em contêineres |
 
 ---
 
@@ -163,9 +163,12 @@ curl -X POST $API/datasets -H "Authorization: Bearer $TOKEN" -F "file=@base.xlsx
 
 ```
 packages/contracts/     Schemas Zod — fonte única de verdade dos tipos
-apps/api/               Fastify: auth, orquestração, SQL Server
-apps/web/               React: interface
-services/engine/        Python: ingestão, execução de receitas, exportação
+apps/api/               Fastify: auth, upload, orquestração, SQL Server
+apps/web/               React: upload, dashboard
+services/engine/        Python: leitura de planilha, inferência de tipos, perfil
+samples/                Planilhas de exemplo para testar
+scripts/                Automação de setup e desenvolvimento
+docker/                 Dockerfiles e configuração do nginx
 docs/ARCHITECTURE.md    Decisões de arquitetura e roadmap
 ```
 

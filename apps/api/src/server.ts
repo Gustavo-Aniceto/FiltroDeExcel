@@ -13,18 +13,18 @@ try {
 
   // Em desenvolvimento, criar o banco no boot elimina um passo manual que
   // todo mundo esquece na primeira execucao.
-  if (!env.isProduction) {
+  if (env.migrateOnBoot) {
     await ensureDatabaseExists((m) => app.log.info(m));
   }
 
   await getPool();
   app.log.info('Conectado ao SQL Server.');
 
-  // Em desenvolvimento, migrar no boot elimina o passo manual esquecido.
-  // Em producao, migrations sao um passo deliberado do deploy: aplicar DDL
+  // Migrar no boot elimina um passo manual esquecido em desenvolvimento e no
+  // container de teste. Em producao e desligado por padrao: aplicar DDL
   // automaticamente em varias instancias subindo ao mesmo tempo e receita de
   // corrida e de indisponibilidade.
-  if (!env.isProduction) {
+  if (env.migrateOnBoot) {
     await runMigrations({
       info: (m) => app.log.info(m),
       warn: (m) => app.log.warn(m),

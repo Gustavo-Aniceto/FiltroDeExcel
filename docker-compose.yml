@@ -1,12 +1,31 @@
+# ============================================================================
+# ExcelFlow - ambiente completo
+# ============================================================================
+#   docker compose up -d --build     sobe tudo
+#   http://localhost:8080            abre o sistema
+#
+# Este arquivo destina-se a TESTE LOCAL. Antes de qualquer uso em producao,
+# troque os segredos (ver .env.example) e coloque um HTTPS na frente.
+# ============================================================================
+
+name: excelflow
+
 services:
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
+    # A Microsoft nao publica imagem ARM do SQL Server. Declarar a plataforma
+    # explicitamente faz o Docker Desktop no Mac Apple Silicon usar emulacao
+    # (Rosetta) em vez de falhar com "no matching manifest". Requer a opcao
+    # "Use Rosetta for x86/amd64 emulation" ligada nas configuracoes do Docker.
+    platform: linux/amd64
     container_name: excelflow-sqlserver
     environment:
       ACCEPT_EULA: "Y"
       MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:-ExcelFlow!Dev2026}
       MSSQL_PID: Developer
     ports:
+      # Exposto para voce conseguir inspecionar o banco com SSMS ou Azure Data
+      # Studio. Se nao precisar, pode remover esta secao com seguranca.
       - "${DB_PORT:-1433}:1433"
     volumes:
       - sqlserver-data:/var/opt/mssql
@@ -19,9 +38,89 @@ services:
         ]
       interval: 10s
       timeout: 5s
-      retries: 20
+      retries: 30
       start_period: 30s
+    restart: unless-stopped
+
+  engine:
+    build:
+      context: .
+      dockerfile: docker/engine.Dockerfile
+    container_name: excelflow-engine
+    environment:
+      NODE_ENV: development
+      ENGINE_SHARED_SECRET: ${ENGINE_SHARED_SECRET:-segredo-interno-de-teste-local-excelflow}
+      STORAGE_ROOT: /data
+      MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-104857600}
+      DATASET_TTL_HOURS: ${DATASET_TTL_HOURS:-72}
+    volumes:
+      # API e engine PRECISAM enxergar o mesmo storage: a API grava o arquivo
+      # enviado e o engine o le. Volumes separados quebrariam toda ingestao.
+      - storage:/data
+    # SEM `ports`: o engine nao tem autenticacao de usuario e nao pode ser
+    # alcancavel de fora. So a API fala com ele, pela rede interna do compose.
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+    container_name: excelflow-api
+    environment:
+      # `development` e deliberado: este compose e para teste local. Em producao
+      # use `production` -- e a API entao EXIGE segredos reais e cookies seguros,
+      # recusando-se a subir com os valores de exemplo.
+      NODE_ENV: development
+      API_PORT: 3333
+      API_HOST: 0.0.0.0
+      # O frontend e a API sao servidos pela mesma origem (nginx), entao nao ha
+      # requisicao cross-origin a permitir.
+      CORS_ORIGINS: http://localhost:8080
+      DB_HOST: sqlserver
+      DB_PORT: 1433
+      DB_NAME: ${DB_NAME:-excelflow}
+      DB_USER: sa
+      DB_PASSWORD: ${MSSQL_SA_PASSWORD:-ExcelFlow!Dev2026}
+      DB_ENCRYPT: "true"
+      DB_TRUST_SERVER_CERTIFICATE: "true"
+      JWT_SECRET: ${JWT_SECRET:-segredo-de-teste-local-do-excelflow-com-mais-de-32-caracteres}
+      ENGINE_URL: http://engine:8000
+      ENGINE_SHARED_SECRET: ${ENGINE_SHARED_SECRET:-segredo-interno-de-teste-local-excelflow}
+      COOKIE_SECURE: "false"
+      STORAGE_ROOT: /data
+      MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-104857600}
+      DATASET_TTL_HOURS: ${DATASET_TTL_HOURS:-72}
+      MIGRATE_ON_BOOT: "true"
+    volumes:
+      - storage:/data
+    expose:
+      - "3333"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      engine:
+        condition: service_started
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/web.Dockerfile
+    container_name: excelflow-web
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    depends_on:
+      - api
     restart: unless-stopped
 
 volumes:
   sqlserver-data:
+  storage:

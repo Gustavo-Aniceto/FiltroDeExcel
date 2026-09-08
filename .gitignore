@@ -26,7 +26,9 @@ data/
 *.xlsx
 *.xls
 *.csv
-!docs/**/*.csv
+# As planilhas de exemplo SAO versionadas de proposito: sem elas, quem clona o
+# repositorio nao tem com o que testar. Sao dados ficticios gerados.
+!samples/**
 
 # logs
 logs/

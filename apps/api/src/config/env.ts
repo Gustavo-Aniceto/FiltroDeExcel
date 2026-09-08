@@ -11,6 +11,23 @@ loadDotenv({ path: resolve(process.cwd(), '../../.env') });
 loadDotenv();
 
 /**
+ * Booleano lido de variavel de ambiente.
+ *
+ * `z.coerce.boolean()` NAO serve aqui: ele aplica `Boolean(valor)`, e
+ * `Boolean("false")` e `true` -- toda string nao vazia e verdadeira em
+ * JavaScript. Na pratica isso tornaria impossivel DESLIGAR uma flag pelo .env:
+ * `COOKIE_SECURE=false` ligaria o cookie seguro em HTTP e derrubaria o login
+ * silenciosamente.
+ *
+ * Aqui interpretamos o TEXTO, e recusamos valores ambiguos em vez de adivinhar.
+ */
+const booleanFromEnv = z
+  .union([z.boolean(), z.enum(['true', 'false', '1', '0', 'yes', 'no', 'on', 'off'])])
+  .transform((value) =>
+    typeof value === 'boolean' ? value : ['true', '1', 'yes', 'on'].includes(value),
+  );
+
+/**
  * Validacao de ambiente com falha imediata.
  *
  * Um servico que sobe com JWT_SECRET indefinido e pior do que um que nao sobe:
@@ -29,8 +46,8 @@ const envSchema = z.object({
   DB_NAME: z.string().min(1),
   DB_USER: z.string().min(1),
   DB_PASSWORD: z.string().min(1),
-  DB_ENCRYPT: z.coerce.boolean().default(true),
-  DB_TRUST_SERVER_CERTIFICATE: z.coerce.boolean().default(true),
+  DB_ENCRYPT: booleanFromEnv.default(true),
+  DB_TRUST_SERVER_CERTIFICATE: booleanFromEnv.default(true),
   DB_POOL_MAX: z.coerce.number().int().min(1).default(10),
   DB_POOL_MIN: z.coerce.number().int().min(0).default(0),
 
@@ -39,10 +56,20 @@ const envSchema = z.object({
   JWT_SECRET: z.string().min(32, 'JWT_SECRET deve ter ao menos 32 caracteres'),
   JWT_ACCESS_TTL: z.coerce.number().int().min(60).default(900),
   REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().min(1).default(14),
-  COOKIE_SECURE: z.coerce.boolean().default(false),
+  COOKIE_SECURE: booleanFromEnv.default(false),
 
   ENGINE_URL: z.string().url().default('http://localhost:8000'),
   ENGINE_SHARED_SECRET: z.string().min(16),
+
+  /**
+   * Aplica as migrations pendentes no boot.
+   *
+   * Em desenvolvimento vem ligado por conveniencia. Em producao o padrao e
+   * DESLIGADO de proposito: varias instancias subindo ao mesmo tempo
+   * aplicariam DDL concorrentemente, e migration deve ser um passo deliberado
+   * do deploy. O container de teste local liga explicitamente.
+   */
+  MIGRATE_ON_BOOT: booleanFromEnv.optional(),
 
   STORAGE_ROOT: z.string().default('./storage'),
   MAX_UPLOAD_BYTES: z.coerce.number().int().min(1024).default(104_857_600),
@@ -88,6 +115,7 @@ if (raw.NODE_ENV === 'production') {
 
 export const env = {
   ...raw,
+  migrateOnBoot: raw.MIGRATE_ON_BOOT ?? raw.NODE_ENV !== 'production',
   /**
    * Caminho relativo e resolvido a partir da RAIZ do monorepo, nao do cwd do
    * processo. Sem isso, `STORAGE_ROOT=./storage` viraria `apps/api/storage` na

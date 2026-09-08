@@ -8,17 +8,19 @@
   },
   "packageManager": "pnpm@10.33.0",
   "scripts": {
+    "bootstrap": "node scripts/setup.mjs",
+    "dev": "node scripts/dev.mjs",
     "build": "pnpm --filter @excelflow/contracts build && pnpm --filter @excelflow/api build && pnpm --filter @excelflow/web build",
-    "dev": "pnpm --parallel --filter @excelflow/api --filter @excelflow/web dev",
-    "dev:api": "pnpm --filter @excelflow/api dev",
-    "dev:web": "pnpm --filter @excelflow/web dev",
     "typecheck": "pnpm -r typecheck",
-    "lint": "pnpm -r lint",
-    "test": "pnpm -r test",
+    "test": "pnpm --filter @excelflow/contracts test",
     "migrate": "pnpm --filter @excelflow/api migrate",
-    "infra:up": "docker compose up -d sqlserver",
-    "infra:down": "docker compose down",
-    "infra:logs": "docker compose logs -f"
+    "docker:up": "docker compose up -d --build",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
+    "db:up": "docker compose up -d sqlserver",
+    "db:down": "docker compose stop sqlserver",
+    "dev:api": "pnpm --filter @excelflow/api dev",
+    "dev:web": "pnpm --filter @excelflow/web dev"
   },
   "devDependencies": {
     "typescript": "^5.7.3"
