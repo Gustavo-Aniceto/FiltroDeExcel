@@ -53,9 +53,30 @@ if (!python) {
 }
 ok(`Python encontrado (${python})`);
 
+/**
+ * Verificar o Docker exige DUAS checagens, nao uma.
+ *
+ * `docker --version` responde mesmo com o Docker Desktop fechado -- ele so
+ * consulta o programa instalado. O motor e outra coisa: `docker info` fala com
+ * o daemon, e e o unico jeito de saber se da para subir um container.
+ *
+ * Sem essa distincao, o script dizia "Docker encontrado" e falhava tres linhas
+ * depois com um erro 500 de pipe do Windows, que nao diz a ninguem que basta
+ * abrir o Docker Desktop.
+ */
 const hasDocker = await has('docker');
-if (hasDocker) {
-  ok('Docker encontrado');
+const dockerRunning =
+  hasDocker && (await has('docker', ['info', '--format', '{{.ServerVersion}}']));
+
+if (dockerRunning) {
+  ok('Docker em execucao');
+} else if (hasDocker) {
+  fail(
+    'O Docker Desktop esta instalado, mas nao esta em execucao.',
+    'Abra o Docker Desktop pelo menu Iniciar e espere o icone da baleia parar de animar\n' +
+      '     (de 30 segundos a 2 minutos na primeira vez). Confirme com:  docker ps\n' +
+      '     Depois rode "pnpm dev" novamente.',
+  );
 } else {
   warn('Docker nao encontrado — voce precisara de um SQL Server proprio (ver .env).');
 }
@@ -72,7 +93,7 @@ if (existsSync(envPath)) {
 }
 
 // ---------------------------------------------------------------------------
-if (hasDocker) {
+if (dockerRunning) {
   step('Subindo o SQL Server');
   try {
     await run('docker', ['compose', 'up', '-d', 'sqlserver']);
@@ -156,7 +177,7 @@ try {
 ok('Motor de processamento pronto');
 
 // ---------------------------------------------------------------------------
-if (hasDocker) {
+if (dockerRunning) {
   step('Criando o banco de dados e aplicando as migrations');
   try {
     await run('pnpm', ['--filter', '@excelflow/api', 'migrate']);

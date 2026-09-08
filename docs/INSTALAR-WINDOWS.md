@@ -56,6 +56,9 @@ docker --version
 As cinco linhas devem mostrar um número de versão. Se alguma disser
 *"não é reconhecido"*, aquele programa não instalou — repita o Passo 1 só para ele.
 
+> **`docker --version` não é suficiente.** Ele confirma que o programa está
+> instalado, não que o motor está rodando. A verificação de verdade é o Passo 4.
+
 ---
 
 ## Passo 4 — Abrir o Docker Desktop
@@ -65,6 +68,16 @@ a instalação.
 
 Espere o ícone da baleia na barra de tarefas parar de animar — leva de 30 segundos
 a 2 minutos na primeira vez. Só continue quando ele estiver parado.
+
+Confirme que o motor está de pé:
+
+```powershell
+docker ps
+```
+
+Se aparecer um cabeçalho de tabela (mesmo vazio), está pronto. Se aparecer
+*"error during connect"* ou *"500 Internal Server Error"*, o Docker Desktop
+ainda não terminou de iniciar — espere mais um pouco e tente de novo.
 
 > Na primeira execução o Docker pode pedir para instalar o **WSL 2** e reiniciar
 > o computador. Aceite e reinicie.
@@ -116,7 +129,7 @@ pnpm dev
 |---|---|
 | `'git' não é reconhecido` | Você não abriu um PowerShell novo depois de instalar (Passo 2) |
 | `'pnpm' não é reconhecido` | Rode `npm install -g pnpm` num PowerShell novo |
-| `error during connect` / `docker daemon` | O Docker Desktop não está aberto, ou ainda está iniciando |
+| `error during connect` / `500 Internal Server Error` / `_ping` | O Docker Desktop não está aberto, ou ainda está iniciando. Confirme com `docker ps` |
 | `Estas portas ja estao em uso` | Feche o PowerShell onde o ExcelFlow estava rodando |
 | SQL Server não fica pronto | Veja `docker compose logs sqlserver`. Costuma ser memória: o Docker precisa de ~2 GB livres |
 | Python não encontrado | Reinstale marcando **"Add Python to PATH"** |

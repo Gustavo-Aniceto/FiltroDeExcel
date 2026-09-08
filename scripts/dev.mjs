@@ -35,7 +35,7 @@ if (needsBootstrap) {
 
 // O SQL Server e a unica dependencia externa. Subir sem ele produz uma pilha de
 // erros de conexao que nao dizem qual e o problema real.
-if (await has('docker')) {
+if (await has('docker', ['info', '--format', '{{.ServerVersion}}'])) {
   try {
     const running = await run(
       'docker',
