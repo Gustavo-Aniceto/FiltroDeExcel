@@ -158,12 +158,21 @@ export function MetricCards({
 }) {
   if (metrics.length === 0) return null;
 
+  // Layout flexivel, e nao grade de N colunas fixas.
+  //
+  // Com grade fixa, duas analises ficavam espremidas em cartoes de 1/6 da
+  // largura e o VALOR truncava -- "R$ 5.343.698..." -- justamente o numero que
+  // a pessoa veio ver. Aqui cada cartao ocupa o que precisa, com um minimo
+  // confortavel, e cresce quando ha poucos.
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 xl:grid-cols-6">
+    <div data-testid="metric-cards" className="flex flex-wrap gap-3">
       {metrics.map((metric) => (
-        <div key={metric.id} className="rounded-card border border-line bg-surface px-3.5 py-3">
+        <div
+          key={metric.id}
+          className="min-w-[180px] flex-1 rounded-card border border-line bg-surface px-3.5 py-3"
+        >
           <p
-            className="truncate text-xs font-medium uppercase tracking-wide text-content-subtle"
+            className="text-xs font-medium uppercase leading-tight tracking-wide text-content-subtle"
             title={metric.label}
           >
             {metric.label}
@@ -176,10 +185,9 @@ export function MetricCards({
               <span className="line-clamp-2">{metric.error}</span>
             </p>
           ) : (
-            <p
-              className="mt-1 truncate text-xl font-semibold tracking-tight text-content"
-              title={formatMetric(metric)}
-            >
+            // O valor NUNCA trunca: e o conteudo do cartao. Se for longo, o
+            // cartao cresce ou o texto quebra -- nunca vira reticencias.
+            <p className="mt-1 text-xl font-semibold tracking-tight text-content">
               {formatMetric(metric)}
             </p>
           )}
