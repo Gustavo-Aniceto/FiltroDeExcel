@@ -5,8 +5,10 @@ Excel. Em vez de repetir manualmente os mesmos filtros, somas e limpezas a cada
 arquivo recebido, o usuário salva o conjunto de regras uma vez e o reaplica com
 um clique nas planilhas seguintes.
 
-**Estado atual: Fase 2 concluída** — envie uma planilha e veja a análise
-automática da estrutura, dos tipos e dos valores. Filtros chegam na Fase 4.
+**Estado atual: Fases 1 a 9 concluídas.** O ciclo completo funciona: envie uma
+planilha, monte filtros visualmente, calcule somas e médias, trate os dados,
+exporte o resultado, salve as regras e reaplique com um clique na planilha
+seguinte. Falta a Fase 10 (assistente por linguagem natural, opcional).
 
 A arquitetura completa está em [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
@@ -75,7 +77,30 @@ Quando aparecer `http://localhost:5173`, abra no navegador.
 
    Vale conferir se o sistema acertou: no arquivo de texto brasileiro, a coluna
    *Valor da operação* deve aparecer como **Moeda** com soma calculada — e não
-   como texto. É esse reconhecimento que torna as próximas fases possíveis.
+   como texto.
+
+4. **Monte um filtro** na aba *Filtros*: `Status = APROVADO`. O valor vem de uma
+   lista, não é digitado. Adicione `Valor da operação > 5000`. O resultado
+   atualiza sozinho.
+
+5. **Combine com OU**: clique em *Grupo* para criar
+   `(Status = APROVADO E Valor > 5000) OU (Status = PENDENTE E Valor > 7000)`.
+
+6. **Calcule** na aba *Análises*: soma, média, maior e menor — sempre sobre o
+   resultado filtrado.
+
+7. **Trate** na aba *Tratamento*: remova duplicados por `Documento`, escolha as
+   colunas, renomeie.
+
+8. **Exporte**. O `.xlsx` sai com duas abas: *Resultado* e *Resumo* (com as
+   análises).
+
+9. **Salve a regra** como "Processamento padrão". Volte, envie
+   `operacoes_texto_brasileiro.xlsx` e aplique a mesma regra pelo menu
+   *Regras salvas* — é aqui que o sistema paga o próprio custo.
+
+10. **Confira o histórico** no menu superior: cada exportação fica registrada
+    com as regras exatas que rodaram.
 
 ### Se algo der errado
 

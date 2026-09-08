@@ -167,18 +167,23 @@ export const NUMERIC_METRIC_OPERATIONS: readonly MetricOperation[] = [
   'sum', 'avg', 'min', 'max', 'median',
 ];
 
+/** Operacoes que medem linhas e nao precisam de coluna. */
+export const COLUMNLESS_OPERATIONS: readonly MetricOperation[] = ['count', 'percentage'];
+
 export const metricSchema = z
   .object({
     id: z.string().min(1).max(64),
     operation: z.enum(METRIC_OPERATIONS),
-    /** Obrigatoria para tudo, exceto `count`. */
+    /** Obrigatoria para tudo, exceto `count` e `percentage`. */
     column: columnNameSchema.optional(),
     /** Rotulo exibido. Sem ele, geramos um a partir da operacao e da coluna. */
     label: z.string().max(200).optional(),
     format: z.enum(['number', 'currency', 'percent', 'integer']).optional(),
   })
   .superRefine((metric, ctx) => {
-    if (metric.operation !== 'count' && !metric.column) {
+    // `count` e `percentage` operam sobre LINHAS, nao sobre uma coluna:
+    // "quantos registros sobraram" e "que fracao do total isso representa".
+    if (!COLUMNLESS_OPERATIONS.includes(metric.operation) && !metric.column) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['column'],
@@ -250,5 +255,6 @@ export function collectRecipeColumns(recipe: Recipe): Set<string> {
 export function defaultMetricLabel(metric: Metric): string {
   if (metric.label) return metric.label;
   if (metric.operation === 'count') return 'Contagem de registros';
+  if (metric.operation === 'percentage') return 'Percentual do total';
   return `${METRIC_LABELS[metric.operation]} de ${metric.column}`;
 }

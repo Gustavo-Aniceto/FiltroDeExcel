@@ -76,6 +76,17 @@ async function callEngine<T>(
     throw AppError.validation(detail);
   }
 
+  // 410 significa que os arquivos ja foram removidos pelo TTL. Nao e falha do
+  // sistema nem culpa do pedido: o dado expirou, e o usuario precisa saber
+  // disso e nao "erro interno".
+  if (response.status === 410) {
+    throw new AppError(
+      'NOT_FOUND',
+      detail ?? 'Os dados desta planilha nao estao mais disponiveis.',
+      410,
+    );
+  }
+
   throw AppError.engine('Nao foi possivel processar a planilha.');
 }
 
@@ -90,6 +101,115 @@ export function ingestDataset(input: {
       dataset_id: input.datasetId,
       original_path: input.originalPath,
       extension: input.extension,
+    },
+    INGEST_TIMEOUT_MS,
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Execucao de Receitas
+// ---------------------------------------------------------------------------
+
+export interface EngineColumnRef {
+  name: string;
+  type: string;
+}
+
+export interface MetricResultRaw {
+  id: string;
+  label: string;
+  operation: string;
+  column: string | null;
+  value: number | null;
+  format: string | null;
+  error: string | null;
+}
+
+export interface PreviewResult {
+  columns: string[];
+  rows: Array<Record<string, unknown>>;
+  totalRows: number;
+  inputRows: number;
+  metrics: MetricResultRaw[];
+  durationMs: number;
+}
+
+interface BaseQueryPayload {
+  parquetPath: string;
+  columns: EngineColumnRef[];
+  recipe: unknown;
+}
+
+function basePayload(input: BaseQueryPayload) {
+  return {
+    parquet_path: input.parquetPath,
+    columns: input.columns,
+    recipe: input.recipe,
+  };
+}
+
+export function enginePreview(
+  input: BaseQueryPayload & {
+    page: number;
+    pageSize: number;
+    search?: string | null;
+    metrics?: unknown[];
+  },
+): Promise<PreviewResult> {
+  return callEngine<PreviewResult>('/internal/preview', {
+    ...basePayload(input),
+    page: input.page,
+    page_size: input.pageSize,
+    search: input.search ?? null,
+    metrics: input.metrics ?? [],
+  });
+}
+
+export function engineColumnValues(
+  input: BaseQueryPayload & { column: string; search?: string | null; limit?: number },
+): Promise<{ values: Array<{ value: string; count: number }> }> {
+  return callEngine('/internal/column-values', {
+    ...basePayload(input),
+    column: input.column,
+    search: input.search ?? null,
+    limit: input.limit ?? 50,
+  });
+}
+
+export function engineSuggestedMetrics(
+  input: BaseQueryPayload,
+): Promise<{ metrics: unknown[] }> {
+  return callEngine('/internal/suggested-metrics', basePayload(input));
+}
+
+export interface ExportResult {
+  path: string;
+  rowCount: number;
+  sizeBytes: number;
+  columns: string[];
+  durationMs: number;
+}
+
+/**
+ * Exportar percorre o resultado inteiro e escreve o arquivo -- muito mais caro
+ * do que uma previa paginada. Por isso reaproveita o timeout longo da ingestao.
+ */
+export function engineExport(
+  input: BaseQueryPayload & {
+    format: 'xlsx' | 'csv';
+    exportColumns?: string[] | null;
+    summary?: unknown[] | null;
+    sourceName: string;
+  },
+): Promise<ExportResult> {
+  return callEngine<ExportResult>(
+    '/internal/export',
+    {
+      ...basePayload(input),
+      fmt: input.format,
+      export_columns: input.exportColumns ?? null,
+      summary: input.summary ?? null,
+      source_name: input.sourceName,
     },
     INGEST_TIMEOUT_MS,
   );

@@ -15,7 +15,7 @@ from fastapi.responses import JSONResponse
 from starlette.requests import Request
 
 from app.config import get_settings
-from app.routers import health, ingestion
+from app.routers import health, ingestion, query
 from app.security import require_internal_auth
 
 logging.basicConfig(
@@ -68,6 +68,7 @@ app.include_router(health.router)
 # Todo o restante do engine exige o segredo compartilhado, aplicado como
 # dependencia no proprio router.
 app.include_router(ingestion.router)
+app.include_router(query.router)
 
 
 @app.get("/internal/ping", dependencies=[Depends(require_internal_auth)])

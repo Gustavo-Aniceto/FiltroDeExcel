@@ -5,8 +5,9 @@ import { AuthProvider, useAuth } from '@/features/auth/AuthContext';
 import { ProtectedRoute } from '@/features/auth/ProtectedRoute';
 import { FullPageSpinner } from '@/components/ui/Spinner';
 import { ApiError } from '@/lib/api-client';
-import DatasetPage from '@/routes/DatasetPage';
+import HistoryPage from '@/routes/HistoryPage';
 import HomePage from '@/routes/HomePage';
+import { WorkspacePage } from '@/features/workspace/WorkspacePage';
 import LoginPage from '@/routes/LoginPage';
 import NotFoundPage from '@/routes/NotFoundPage';
 import RegisterPage from '@/routes/RegisterPage';
@@ -60,7 +61,8 @@ export default function App() {
             <Route element={<ProtectedRoute />}>
               <Route element={<AppLayout />}>
                 <Route path="/" element={<HomePage />} />
-                <Route path="/planilhas/:id" element={<DatasetPage />} />
+                <Route path="/planilhas/:id" element={<WorkspacePage />} />
+                <Route path="/historico" element={<HistoryPage />} />
               </Route>
             </Route>
 

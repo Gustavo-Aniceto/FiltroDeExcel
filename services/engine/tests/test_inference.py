@@ -127,3 +127,31 @@ class TestTiposNativos:
 def test_deteccao_de_coluna_monetaria_pelo_cabecalho(header: str, esperado: bool) -> None:
     strategy = infer_strategy(header, pl.Series(header, ["10.00", "20.00"]))
     assert (strategy.column_type == "currency") is esperado
+
+
+class TestIdentificadores:
+    """Colunas de codigo nao podem virar numero: o zero a esquerda se perde."""
+
+    def test_agencia_com_zero_a_esquerda_continua_texto(self) -> None:
+        data = {"Agencia": ["0001", "0442", "1287"]}
+        assert types_of(data)["Agencia"] == "text"
+        assert values_of(data, "Agencia") == ["0001", "0442", "1287"]
+
+    def test_conta_com_zeros(self) -> None:
+        assert types_of({"Conta": ["00012345", "00098765"]})["Conta"] == "text"
+
+    def test_cpf_sem_pontuacao_com_zero(self) -> None:
+        assert types_of({"CPF": ["01234567890", "09876543210"]})["CPF"] == "text"
+
+    def test_codigo_longo_demais_para_float_continua_texto(self) -> None:
+        # 44 digitos: converter para float perderia precisao silenciosamente.
+        assert types_of({"Codigo": ["8" * 44, "7" * 44]})["Codigo"] == "text"
+
+    def test_numero_normal_continua_numero(self) -> None:
+        # A regra do zero a esquerda nao pode transformar valor legitimo em texto.
+        assert types_of({"Quantidade": ["10", "250", "1"]})["Quantidade"] == "number"
+
+    def test_decimal_menor_que_um_continua_numero(self) -> None:
+        # "0,73" tem zero a esquerda mas e um decimal, nao um codigo.
+        assert types_of({"Taxa": ["0,73", "2,48", "4,19"]})["Taxa"] == "number"
+        assert values_of({"Taxa": ["0,73", "2,48"]}, "Taxa") == [0.73, 2.48]

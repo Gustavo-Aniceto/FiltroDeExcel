@@ -1,7 +1,7 @@
 # ExcelFlow — Arquitetura
 
 > Documento vivo. Atualizado a cada fase concluída.
-> Versão: 0.2 (Fases 0 a 2)
+> Versão: 0.3 (Fases 0 a 9)
 
 ---
 
@@ -452,12 +452,12 @@ por índices simples.
 | 0 | Monorepo, Docker, contratos, migrations | ✅ |
 | 1 | Autenticação ponta a ponta, esqueleto dos 3 apps | ✅ |
 | 2 | Upload, conversão para Parquet, perfilamento, dashboard | ✅ |
-| 3 | Grade paginada e virtualizada | ⬜ |
-| 4 | Construtor visual de filtros | ⬜ |
-| 5 | Filtros combinados AND/OR aninhados | ⬜ |
-| 6 | Análises e métricas sobre o resultado filtrado | ⬜ |
-| 7 | Exportação Excel/CSV com aba de resumo | ⬜ |
-| 8 | Receitas salvas e reaplicação | ⬜ |
-| 9 | Histórico de execuções | ⬜ |
+| 3 | Grade paginada e virtualizada | ✅ |
+| 4 | Construtor visual de filtros | ✅ |
+| 5 | Filtros combinados AND/OR aninhados | ✅ |
+| 6 | Análises e métricas sobre o resultado filtrado | ✅ |
+| 7 | Exportação Excel/CSV com aba de resumo | ✅ |
+| 8 | Receitas salvas e reaplicação | ✅ |
+| 9 | Histórico de execuções | ✅ |
 | 10 | IA: linguagem natural → Receita validada | ⬜ |
 | 11 | Endurecimento de segurança e otimização | ⬜ |

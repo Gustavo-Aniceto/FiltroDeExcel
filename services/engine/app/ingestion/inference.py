@@ -113,6 +113,37 @@ def _match_ratio(samples: list[str], predicate) -> float:
     return sum(1 for s in samples if predicate(s)) / len(samples)
 
 
+# Valor que PARECE numero mas e identificador: zero a esquerda seguido de
+# digitos ("0001", "007"). Converter destruiria o zero e o codigo junto.
+LEADING_ZERO_RE = re.compile(r"^-?0\d")
+
+# Acima de 15 digitos significativos, float64 comeca a perder precisao. Um CPF
+# sem pontuacao (11 digitos) ainda cabe, mas um codigo de barras (44) nao --
+# e converte-lo devolveria um numero silenciosamente errado.
+MAX_SAFE_DIGITS = 15
+
+
+def _is_identifier_like(cleaned: list[str]) -> bool:
+    """Detecta colunas de CODIGO disfarcadas de numero.
+
+    Este e o caso que mais importa para planilhas bancarias: agencia "0001",
+    conta "00012345", CPF "01234567890". Se a coluna virar numero, o zero a
+    esquerda desaparece e o codigo fica ERRADO -- sem nenhum aviso, e de um
+    jeito que so aparece quando alguem tenta usar o dado exportado.
+
+    Basta UM valor com zero a esquerda para a coluna inteira ficar como texto:
+    e um sinal forte, e o custo de errar para o lado do texto e baixo (perde-se
+    a soma de algo que nunca deveria ser somado).
+    """
+    for value in cleaned:
+        if LEADING_ZERO_RE.match(value):
+            return True
+        digits = value.lstrip("-").split(",")[0].split(".")[0]
+        if len(digits) > MAX_SAFE_DIGITS:
+            return True
+    return False
+
+
 def _detect_number(samples: list[str]) -> ColumnStrategy | None:
     """Decide entre formato brasileiro e internacional.
 
@@ -126,6 +157,9 @@ def _detect_number(samples: list[str]) -> ColumnStrategy | None:
     cleaned = [_clean_numeric_text(s) for s in samples]
     cleaned = [c for c in cleaned if c]
     if not cleaned:
+        return None
+
+    if _is_identifier_like(cleaned):
         return None
 
     br_ratio = _match_ratio(cleaned, lambda s: bool(BR_DECIMAL_RE.match(s)))
