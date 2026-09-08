@@ -1,0 +1,47 @@
+# dependencies
+node_modules/
+.pnpm-store/
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# build output
+dist/
+build/
+*.tsbuildinfo
+.vite/
+
+# environment
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# runtime data (NUNCA versionar planilhas de usuários)
+storage/
+data/
+*.parquet
+*.xlsx
+*.xls
+*.csv
+!docs/**/*.csv
+
+# logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# testes
+coverage/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/

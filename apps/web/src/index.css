@@ -1,0 +1,82 @@
+@import 'tailwindcss';
+
+/*
+ * Design tokens.
+ *
+ * No Tailwind v4, cada variavel declarada em @theme GERA os utilitarios
+ * correspondentes: `--color-brand` produz `bg-brand`, `text-brand`,
+ * `border-brand`, e assim por diante. Por isso as classes pelo codigo sao
+ * `bg-surface` e nao `bg-[var(--color-surface)]`.
+ *
+ * Trocar a identidade visual -- inclusive aplicar a marca da empresa depois --
+ * se resume a editar este bloco.
+ *
+ * A paleta e sobria de proposito: este e um sistema de trabalho, usado por
+ * horas seguidas com tabelas densas. Contraste alto no texto, cor reservada
+ * para o que exige acao.
+ */
+@theme {
+  /* Superficies */
+  --color-surface: #ffffff;
+  --color-surface-muted: #f6f7f9;
+  --color-surface-sunken: #eef0f3;
+
+  /* Linhas e divisorias */
+  --color-line: #e2e5ea;
+  --color-line-strong: #cbd0d8;
+
+  /* Texto */
+  --color-content: #14181f;
+  --color-content-muted: #5b6472;
+  --color-content-subtle: #838d9c;
+
+  /* Marca */
+  --color-brand: #1d4ed8;
+  --color-brand-hover: #1e40af;
+  --color-brand-subtle: #eff4ff;
+
+  /* Estados. Os tons "-subtle" servem de fundo; os fortes, de texto e icone.
+     Todos foram escolhidos para manter contraste AA sobre o fundo claro. */
+  --color-success: #0f7b45;
+  --color-success-subtle: #e8f6ee;
+  --color-warning: #a45c00;
+  --color-warning-subtle: #fdf3e2;
+  --color-danger: #b42318;
+  --color-danger-subtle: #fdeceb;
+
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, monospace;
+
+  --radius-card: 0.625rem;
+}
+
+@layer base {
+  /* Cor de borda padrao, para nao repetir `border-line` em cada elemento. */
+  *,
+  ::before,
+  ::after {
+    border-color: var(--color-line);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-surface-muted);
+    color: var(--color-content);
+    font-family: var(--font-sans);
+    /* Numeros tabulares: em colunas de valores, digitos de larguras
+       diferentes fazem os numeros "dancarem" na vertical e atrapalham a
+       leitura de uma tabela financeira. */
+    font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Foco visivel em toda a aplicacao: navegacao por teclado e requisito de
+     acessibilidade, nao enfeite. */
+  :focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+  }
+}

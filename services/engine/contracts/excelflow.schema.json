@@ -1,0 +1,976 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ExcelFlow contracts",
+  "definitions": {
+    "Filter": {
+      "$ref": "#/definitions/Filter",
+      "definitions": {
+        "Filter": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "group"
+            },
+            "id": {
+              "type": "string",
+              "maxLength": 64
+            },
+            "logic": {
+              "type": "string",
+              "enum": [
+                "AND",
+                "OR"
+              ]
+            },
+            "negate": {
+              "type": "boolean"
+            },
+            "children": {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "condition"
+                          },
+                          "id": {
+                            "type": "string",
+                            "maxLength": 64
+                          },
+                          "column": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 255
+                          },
+                          "caseSensitive": {
+                            "type": "boolean"
+                          },
+                          "operator": {
+                            "type": "string",
+                            "enum": [
+                              "is_empty",
+                              "is_not_empty",
+                              "is_true",
+                              "is_false"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "column",
+                          "operator"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "$ref": "#/definitions/Filter/properties/children/items/anyOf/0/anyOf/0/properties/type"
+                          },
+                          "id": {
+                            "$ref": "#/definitions/Filter/properties/children/items/anyOf/0/anyOf/0/properties/id"
+                          },
+                          "column": {
+                            "$ref": "#/definitions/Filter/properties/children/items/anyOf/0/anyOf/0/properties/column"
+                          },
+                          "caseSensitive": {
+                            "$ref": "#/definitions/Filter/properties/children/items/anyOf/0/anyOf/0/properties/caseSensitive"
+                          },
+                          "operator": {
+                            "type": "string",
+                            "enum": [
+                              "equals",
+                              "not_equals",
+                              "contains",
+                              "not_contains",
+                              "starts_with",
+                              "ends_with",
+                              "greater_than",
+                              "greater_or_equal",
+                              "less_than",
+                              "less_or_equal",
+                              "date_equals",
+                              "date_before",
+                              "date_after"
+                            ]
+                          },
+                          "value": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "maxLength": 1000
+                              },
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "boolean"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "column",
+                          "operator",
+                          "value"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "$ref": "#/definitions/Filter/properties/children/items/anyOf/0/anyOf/0/properties/type"
+                          },
+                          "id": {
+                            "$ref": "#/definitions/Filter/properties/children/items/anyOf/0/anyOf/0/properties/id"
+                          },
+                          "column": {
+                            "$ref": "#/definitions/Filter/properties/children/items/anyOf/0/anyOf/0/properties/column"
+                          },
+                          "caseSensitive": {
+                            "$ref": "#/definitions/Filter/properties/children/items/anyOf/0/anyOf/0/properties/caseSensitive"
+                          },
+                          "operator": {
+                            "type": "string",
+                            "enum": [
+                              "in",
+                              "not_in"
+                            ]
+                          },
+                          "values": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/definitions/Filter/properties/children/items/anyOf/0/anyOf/1/properties/value"
+                            },
+                            "minItems": 1,
+                            "maxItems": 1000
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "column",
+                          "operator",
+                          "values"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "$ref": "#/definitions/Filter/properties/children/items/anyOf/0/anyOf/0/properties/type"
+                          },
+                          "id": {
+                            "$ref": "#/definitions/Filter/properties/children/items/anyOf/0/anyOf/0/properties/id"
+                          },
+                          "column": {
+                            "$ref": "#/definitions/Filter/properties/children/items/anyOf/0/anyOf/0/properties/column"
+                          },
+                          "caseSensitive": {
+                            "$ref": "#/definitions/Filter/properties/children/items/anyOf/0/anyOf/0/properties/caseSensitive"
+                          },
+                          "operator": {
+                            "type": "string",
+                            "enum": [
+                              "between",
+                              "date_between"
+                            ]
+                          },
+                          "range": {
+                            "type": "array",
+                            "minItems": 2,
+                            "maxItems": 2,
+                            "items": [
+                              {
+                                "$ref": "#/definitions/Filter/properties/children/items/anyOf/0/anyOf/1/properties/value"
+                              },
+                              {
+                                "$ref": "#/definitions/Filter/properties/children/items/anyOf/0/anyOf/1/properties/value"
+                              }
+                            ]
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "column",
+                          "operator",
+                          "range"
+                        ],
+                        "additionalProperties": false
+                      }
+                    ]
+                  },
+                  {
+                    "$ref": "#/definitions/Filter"
+                  }
+                ]
+              },
+              "maxItems": 200
+            }
+          },
+          "required": [
+            "type",
+            "logic",
+            "children"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "Recipe": {
+      "$ref": "#/definitions/Recipe",
+      "definitions": {
+        "Recipe": {
+          "type": "object",
+          "properties": {
+            "version": {
+              "type": "number",
+              "const": 1
+            },
+            "steps": {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "maxLength": 64
+                      },
+                      "kind": {
+                        "type": "string",
+                        "const": "filter"
+                      },
+                      "filter": {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "group"
+                          },
+                          "id": {
+                            "type": "string",
+                            "maxLength": 64
+                          },
+                          "logic": {
+                            "type": "string",
+                            "enum": [
+                              "AND",
+                              "OR"
+                            ]
+                          },
+                          "negate": {
+                            "type": "boolean"
+                          },
+                          "children": {
+                            "type": "array",
+                            "items": {
+                              "anyOf": [
+                                {
+                                  "anyOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "type": {
+                                          "type": "string",
+                                          "const": "condition"
+                                        },
+                                        "id": {
+                                          "type": "string",
+                                          "maxLength": 64
+                                        },
+                                        "column": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 255
+                                        },
+                                        "caseSensitive": {
+                                          "type": "boolean"
+                                        },
+                                        "operator": {
+                                          "type": "string",
+                                          "enum": [
+                                            "is_empty",
+                                            "is_not_empty",
+                                            "is_true",
+                                            "is_false"
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "type",
+                                        "column",
+                                        "operator"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "type": {
+                                          "$ref": "#/definitions/Recipe/properties/steps/items/anyOf/0/properties/filter/properties/children/items/anyOf/0/anyOf/0/properties/type"
+                                        },
+                                        "id": {
+                                          "$ref": "#/definitions/Recipe/properties/steps/items/anyOf/0/properties/filter/properties/children/items/anyOf/0/anyOf/0/properties/id"
+                                        },
+                                        "column": {
+                                          "$ref": "#/definitions/Recipe/properties/steps/items/anyOf/0/properties/filter/properties/children/items/anyOf/0/anyOf/0/properties/column"
+                                        },
+                                        "caseSensitive": {
+                                          "$ref": "#/definitions/Recipe/properties/steps/items/anyOf/0/properties/filter/properties/children/items/anyOf/0/anyOf/0/properties/caseSensitive"
+                                        },
+                                        "operator": {
+                                          "type": "string",
+                                          "enum": [
+                                            "equals",
+                                            "not_equals",
+                                            "contains",
+                                            "not_contains",
+                                            "starts_with",
+                                            "ends_with",
+                                            "greater_than",
+                                            "greater_or_equal",
+                                            "less_than",
+                                            "less_or_equal",
+                                            "date_equals",
+                                            "date_before",
+                                            "date_after"
+                                          ]
+                                        },
+                                        "value": {
+                                          "anyOf": [
+                                            {
+                                              "type": "string",
+                                              "maxLength": 1000
+                                            },
+                                            {
+                                              "type": "number"
+                                            },
+                                            {
+                                              "type": "boolean"
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "type",
+                                        "column",
+                                        "operator",
+                                        "value"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "type": {
+                                          "$ref": "#/definitions/Recipe/properties/steps/items/anyOf/0/properties/filter/properties/children/items/anyOf/0/anyOf/0/properties/type"
+                                        },
+                                        "id": {
+                                          "$ref": "#/definitions/Recipe/properties/steps/items/anyOf/0/properties/filter/properties/children/items/anyOf/0/anyOf/0/properties/id"
+                                        },
+                                        "column": {
+                                          "$ref": "#/definitions/Recipe/properties/steps/items/anyOf/0/properties/filter/properties/children/items/anyOf/0/anyOf/0/properties/column"
+                                        },
+                                        "caseSensitive": {
+                                          "$ref": "#/definitions/Recipe/properties/steps/items/anyOf/0/properties/filter/properties/children/items/anyOf/0/anyOf/0/properties/caseSensitive"
+                                        },
+                                        "operator": {
+                                          "type": "string",
+                                          "enum": [
+                                            "in",
+                                            "not_in"
+                                          ]
+                                        },
+                                        "values": {
+                                          "type": "array",
+                                          "items": {
+                                            "$ref": "#/definitions/Recipe/properties/steps/items/anyOf/0/properties/filter/properties/children/items/anyOf/0/anyOf/1/properties/value"
+                                          },
+                                          "minItems": 1,
+                                          "maxItems": 1000
+                                        }
+                                      },
+                                      "required": [
+                                        "type",
+                                        "column",
+                                        "operator",
+                                        "values"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "type": {
+                                          "$ref": "#/definitions/Recipe/properties/steps/items/anyOf/0/properties/filter/properties/children/items/anyOf/0/anyOf/0/properties/type"
+                                        },
+                                        "id": {
+                                          "$ref": "#/definitions/Recipe/properties/steps/items/anyOf/0/properties/filter/properties/children/items/anyOf/0/anyOf/0/properties/id"
+                                        },
+                                        "column": {
+                                          "$ref": "#/definitions/Recipe/properties/steps/items/anyOf/0/properties/filter/properties/children/items/anyOf/0/anyOf/0/properties/column"
+                                        },
+                                        "caseSensitive": {
+                                          "$ref": "#/definitions/Recipe/properties/steps/items/anyOf/0/properties/filter/properties/children/items/anyOf/0/anyOf/0/properties/caseSensitive"
+                                        },
+                                        "operator": {
+                                          "type": "string",
+                                          "enum": [
+                                            "between",
+                                            "date_between"
+                                          ]
+                                        },
+                                        "range": {
+                                          "type": "array",
+                                          "minItems": 2,
+                                          "maxItems": 2,
+                                          "items": [
+                                            {
+                                              "$ref": "#/definitions/Recipe/properties/steps/items/anyOf/0/properties/filter/properties/children/items/anyOf/0/anyOf/1/properties/value"
+                                            },
+                                            {
+                                              "$ref": "#/definitions/Recipe/properties/steps/items/anyOf/0/properties/filter/properties/children/items/anyOf/0/anyOf/1/properties/value"
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "type",
+                                        "column",
+                                        "operator",
+                                        "range"
+                                      ],
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                },
+                                {
+                                  "$ref": "#/definitions/Recipe/properties/steps/items/anyOf/0/properties/filter"
+                                }
+                              ]
+                            },
+                            "maxItems": 200
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "logic",
+                          "children"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "filter"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "$ref": "#/definitions/Recipe/properties/steps/items/anyOf/0/properties/id"
+                      },
+                      "kind": {
+                        "type": "string",
+                        "const": "drop_duplicates"
+                      },
+                      "columns": {
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/definitions/Recipe/properties/steps/items/anyOf/0/properties/filter/properties/children/items/anyOf/0/anyOf/0/properties/column"
+                        },
+                        "maxItems": 100,
+                        "default": []
+                      },
+                      "keep": {
+                        "type": "string",
+                        "enum": [
+                          "first",
+                          "last",
+                          "none"
+                        ],
+                        "default": "first"
+                      }
+                    },
+                    "required": [
+                      "kind"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "$ref": "#/definitions/Recipe/properties/steps/items/anyOf/0/properties/id"
+                      },
+                      "kind": {
+                        "type": "string",
+                        "const": "drop_empty_rows"
+                      },
+                      "columns": {
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/definitions/Recipe/properties/steps/items/anyOf/0/properties/filter/properties/children/items/anyOf/0/anyOf/0/properties/column"
+                        },
+                        "maxItems": 100,
+                        "default": []
+                      },
+                      "mode": {
+                        "type": "string",
+                        "enum": [
+                          "all",
+                          "any"
+                        ],
+                        "default": "all"
+                      }
+                    },
+                    "required": [
+                      "kind"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "$ref": "#/definitions/Recipe/properties/steps/items/anyOf/0/properties/id"
+                      },
+                      "kind": {
+                        "type": "string",
+                        "const": "select_columns"
+                      },
+                      "columns": {
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/definitions/Recipe/properties/steps/items/anyOf/0/properties/filter/properties/children/items/anyOf/0/anyOf/0/properties/column"
+                        },
+                        "minItems": 1,
+                        "maxItems": 500
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "columns"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "$ref": "#/definitions/Recipe/properties/steps/items/anyOf/0/properties/id"
+                      },
+                      "kind": {
+                        "type": "string",
+                        "const": "drop_columns"
+                      },
+                      "columns": {
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/definitions/Recipe/properties/steps/items/anyOf/0/properties/filter/properties/children/items/anyOf/0/anyOf/0/properties/column"
+                        },
+                        "minItems": 1,
+                        "maxItems": 500
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "columns"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "$ref": "#/definitions/Recipe/properties/steps/items/anyOf/0/properties/id"
+                      },
+                      "kind": {
+                        "type": "string",
+                        "const": "rename_columns"
+                      },
+                      "mapping": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "from": {
+                              "$ref": "#/definitions/Recipe/properties/steps/items/anyOf/0/properties/filter/properties/children/items/anyOf/0/anyOf/0/properties/column"
+                            },
+                            "to": {
+                              "$ref": "#/definitions/Recipe/properties/steps/items/anyOf/0/properties/filter/properties/children/items/anyOf/0/anyOf/0/properties/column"
+                            }
+                          },
+                          "required": [
+                            "from",
+                            "to"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "minItems": 1,
+                        "maxItems": 500
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "mapping"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "$ref": "#/definitions/Recipe/properties/steps/items/anyOf/0/properties/id"
+                      },
+                      "kind": {
+                        "type": "string",
+                        "const": "sort"
+                      },
+                      "by": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "column": {
+                              "$ref": "#/definitions/Recipe/properties/steps/items/anyOf/0/properties/filter/properties/children/items/anyOf/0/anyOf/0/properties/column"
+                            },
+                            "direction": {
+                              "type": "string",
+                              "enum": [
+                                "asc",
+                                "desc"
+                              ],
+                              "default": "asc"
+                            }
+                          },
+                          "required": [
+                            "column"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "minItems": 1,
+                        "maxItems": 10
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "by"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "$ref": "#/definitions/Recipe/properties/steps/items/anyOf/0/properties/id"
+                      },
+                      "kind": {
+                        "type": "string",
+                        "const": "cast"
+                      },
+                      "column": {
+                        "$ref": "#/definitions/Recipe/properties/steps/items/anyOf/0/properties/filter/properties/children/items/anyOf/0/anyOf/0/properties/column"
+                      },
+                      "to": {
+                        "type": "string",
+                        "enum": [
+                          "text",
+                          "number",
+                          "date",
+                          "boolean"
+                        ]
+                      },
+                      "format": {
+                        "type": "string",
+                        "maxLength": 50
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "column",
+                      "to"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "$ref": "#/definitions/Recipe/properties/steps/items/anyOf/0/properties/id"
+                      },
+                      "kind": {
+                        "type": "string",
+                        "const": "replace_values"
+                      },
+                      "column": {
+                        "$ref": "#/definitions/Recipe/properties/steps/items/anyOf/0/properties/filter/properties/children/items/anyOf/0/anyOf/0/properties/column"
+                      },
+                      "mode": {
+                        "type": "string",
+                        "enum": [
+                          "exact",
+                          "contains"
+                        ],
+                        "default": "exact"
+                      },
+                      "replacements": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "from": {
+                              "type": "string",
+                              "maxLength": 1000
+                            },
+                            "to": {
+                              "type": "string",
+                              "maxLength": 1000
+                            }
+                          },
+                          "required": [
+                            "from",
+                            "to"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "minItems": 1,
+                        "maxItems": 200
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "column",
+                      "replacements"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "$ref": "#/definitions/Recipe/properties/steps/items/anyOf/0/properties/id"
+                      },
+                      "kind": {
+                        "type": "string",
+                        "const": "fill_empty"
+                      },
+                      "column": {
+                        "$ref": "#/definitions/Recipe/properties/steps/items/anyOf/0/properties/filter/properties/children/items/anyOf/0/anyOf/0/properties/column"
+                      },
+                      "value": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "maxLength": 1000
+                          },
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "boolean"
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "column",
+                      "value"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              },
+              "maxItems": 50,
+              "default": []
+            },
+            "metrics": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  },
+                  "operation": {
+                    "type": "string",
+                    "enum": [
+                      "count",
+                      "count_distinct",
+                      "count_empty",
+                      "sum",
+                      "avg",
+                      "min",
+                      "max",
+                      "median",
+                      "percentage"
+                    ]
+                  },
+                  "column": {
+                    "$ref": "#/definitions/Recipe/properties/steps/items/anyOf/0/properties/filter/properties/children/items/anyOf/0/anyOf/0/properties/column"
+                  },
+                  "label": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "format": {
+                    "type": "string",
+                    "enum": [
+                      "number",
+                      "currency",
+                      "percent",
+                      "integer"
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "operation"
+                ],
+                "additionalProperties": false
+              },
+              "maxItems": 50,
+              "default": []
+            }
+          },
+          "required": [
+            "version"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ColumnProfile": {
+      "$ref": "#/definitions/ColumnProfile",
+      "definitions": {
+        "ColumnProfile": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255
+            },
+            "position": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "text",
+                "number",
+                "currency",
+                "date",
+                "boolean",
+                "empty"
+              ]
+            },
+            "nullCount": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "distinctCount": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "min": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "max": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "sum": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "avg": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "minDate": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "maxDate": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "topValues": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "type": "string"
+                  },
+                  "count": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "value",
+                  "count"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "sampleValues": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "name",
+            "position",
+            "type",
+            "nullCount",
+            "distinctCount"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    }
+  }
+}
