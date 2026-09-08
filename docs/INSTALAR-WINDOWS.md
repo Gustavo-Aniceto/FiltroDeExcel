@@ -129,10 +129,70 @@ pnpm dev
 |---|---|
 | `'git' não é reconhecido` | Você não abriu um PowerShell novo depois de instalar (Passo 2) |
 | `'pnpm' não é reconhecido` | Rode `npm install -g pnpm` num PowerShell novo |
-| `error during connect` / `500 Internal Server Error` / `_ping` | O Docker Desktop não está aberto, ou ainda está iniciando. Confirme com `docker ps` |
+| `error during connect` / `500 Internal Server Error` / `_ping` | O motor do Docker não está de pé. Veja a seção abaixo |
 | `Estas portas ja estao em uso` | Feche o PowerShell onde o ExcelFlow estava rodando |
 | SQL Server não fica pronto | Veja `docker compose logs sqlserver`. Costuma ser memória: o Docker precisa de ~2 GB livres |
 | Python não encontrado | Reinstale marcando **"Add Python to PATH"** |
 
 Se aparecer algo fora desta lista, copie a mensagem inteira do terminal — ela
 costuma dizer exatamente o que falta.
+
+---
+
+## Docker Desktop não sobe
+
+Sintoma: `docker ps` responde `500 Internal Server Error` mencionando
+`dockerDesktopLinuxEngine`.
+
+Isso significa que o Docker Desktop está instalado e o canal de comunicação
+existe, mas o **motor Linux por trás dele não iniciou**. Quase sempre é o WSL 2.
+
+**1. Olhe a janela do Docker Desktop.** Abra pelo menu Iniciar. Ele costuma
+mostrar o erro real numa faixa colorida no topo. Se pedir para aceitar os termos
+de uso, aceite — o motor não inicia antes disso.
+
+**2. Atualize o WSL.** Abra o PowerShell **como Administrador**
+(botão direito no menu Iniciar → *Terminal (Admin)*):
+
+```powershell
+wsl --update
+wsl --status
+```
+
+Se o `wsl --status` disser que não há distribuição ou que o WSL não está
+instalado:
+
+```powershell
+wsl --install
+```
+
+**3. Reinicie o computador.** O WSL 2 precisa disso.
+
+**4. Abra o Docker Desktop de novo** e espere aparecer **"Engine running"** no
+rodapé da janela. Confirme:
+
+```powershell
+docker ps
+```
+
+---
+
+## Alternativa: usar um SQL Server sem Docker
+
+Se o Docker continuar dando trabalho, o projeto funciona com qualquer SQL Server
+— inclusive o **SQL Server Express**, que instala direto no Windows:
+
+```powershell
+winget install --id Microsoft.SQLServer.2022.Express -e
+```
+
+Depois edite o arquivo `.env` na pasta do projeto apontando para ele
+(`DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`) e rode:
+
+```powershell
+$env:SKIP_DOCKER=1
+pnpm dev
+```
+
+O Docker é usado **apenas** para subir o SQL Server. Nada mais do sistema
+depende dele.

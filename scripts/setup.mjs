@@ -65,20 +65,33 @@ ok(`Python encontrado (${python})`);
  * abrir o Docker Desktop.
  */
 const hasDocker = await has('docker');
-const dockerRunning =
-  hasDocker && (await has('docker', ['info', '--format', '{{.ServerVersion}}']));
 
-if (dockerRunning) {
+// Escotilha de saida para quem ja tem um SQL Server proprio (corporativo, ou
+// SQL Server Express instalado direto no Windows). Sem ela, ter o Docker
+// instalado e parado bloquearia alguem que nem precisa dele.
+const skipDocker = process.env.SKIP_DOCKER === '1';
+
+const dockerRunning =
+  !skipDocker &&
+  hasDocker &&
+  (await has('docker', ['info', '--format', '{{.ServerVersion}}']));
+
+if (skipDocker) {
+  warn('SKIP_DOCKER=1 — usando o SQL Server configurado no .env, sem Docker.');
+} else if (dockerRunning) {
   ok('Docker em execucao');
 } else if (hasDocker) {
   fail(
-    'O Docker Desktop esta instalado, mas nao esta em execucao.',
-    'Abra o Docker Desktop pelo menu Iniciar e espere o icone da baleia parar de animar\n' +
-      '     (de 30 segundos a 2 minutos na primeira vez). Confirme com:  docker ps\n' +
-      '     Depois rode "pnpm dev" novamente.',
+    'O Docker Desktop esta instalado, mas o motor nao esta em execucao.',
+    'Abra o Docker Desktop pelo menu Iniciar e espere aparecer "Engine running".\n' +
+      '     Confirme com:  docker ps\n\n' +
+      '     Se o Docker Desktop mostrar erro de WSL, rode num PowerShell como\n' +
+      '     ADMINISTRADOR:  wsl --update   e reinicie o computador.\n\n' +
+      '     Ja tem um SQL Server proprio? Configure-o no .env e rode:\n' +
+      '       $env:SKIP_DOCKER=1; pnpm dev',
   );
 } else {
-  warn('Docker nao encontrado — voce precisara de um SQL Server proprio (ver .env).');
+  warn('Docker nao encontrado — usando o SQL Server configurado no .env.');
 }
 
 // ---------------------------------------------------------------------------
@@ -177,7 +190,7 @@ try {
 ok('Motor de processamento pronto');
 
 // ---------------------------------------------------------------------------
-if (dockerRunning) {
+if (dockerRunning || skipDocker || !hasDocker) {
   step('Criando o banco de dados e aplicando as migrations');
   try {
     await run('pnpm', ['--filter', '@excelflow/api', 'migrate']);
