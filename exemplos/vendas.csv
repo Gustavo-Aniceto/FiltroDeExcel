@@ -1,0 +1,16 @@
+ID;Cliente;Cidade;Estado;Produto;Quantidade;Valor;Data;Status
+1001;Ana Souza;São Paulo;SP;Notebook;2;7500,00;2024-01-15;Pago
+1002;Bruno Lima;Rio de Janeiro;RJ;Monitor;3;2400,50;2024-01-22;Pendente
+1003;Carla Dias;Belo Horizonte;MG;Teclado;10;1200,00;2024-02-03;Pago
+1004;Diego Alves;São Paulo;SP;Mouse;15;900,00;2024-02-11;Cancelado
+1005;Elaine Costa;Curitiba;PR;Notebook;1;3750,00;2024-02-19;Pago
+1006;Felipe Rocha;Porto Alegre;RS;Impressora;2;1800,00;2024-03-02;Pendente
+1007;Gabriela Melo;São Paulo;SP;Monitor;5;4000,00;2024-03-08;Pago
+1008;Hugo Prado;Salvador;BA;Notebook;3;11250,00;2024-03-14;Pendente
+1009;Isabela Nunes;Recife;PE;Teclado;20;2400,00;2024-03-21;Pago
+1010;João Ferreira;Rio de Janeiro;RJ;Cadeira;4;3600,00;2024-04-05;Cancelado
+1011;Karina Duarte;Campinas;SP;Mouse;30;1800,00;2024-04-12;Pago
+1012;Lucas Martins;Belo Horizonte;MG;Notebook;2;7400,00;2024-04-18;Pendente
+1013;Mariana Reis;Fortaleza;CE;Monitor;6;4800,00;2024-05-02;Pago
+1014;Nelson Barros;Curitiba;PR;Impressora;1;950,00;2024-05-09;Pago
+1015;Olivia Gomes;São Paulo;SP;Cadeira;8;7200,00;2024-05-16;Pendente
