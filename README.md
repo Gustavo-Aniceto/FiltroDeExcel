@@ -46,6 +46,11 @@ histórico — nunca as linhas da planilha.
 | **Python 3.11+** | [python.org](https://www.python.org/downloads/) | No Windows, marque **"Add Python to PATH"** no instalador |
 | **Docker Desktop** | [docker.com](https://www.docker.com/products/docker-desktop/) | Só para o SQL Server. Deixe-o **aberto** antes de começar |
 
+> **No Windows partindo do zero?** O guia
+> [`docs/INSTALAR-WINDOWS.md`](docs/INSTALAR-WINDOWS.md) cobre a instalação
+> completa, incluindo as armadilhas (o PowerShell precisa ser reaberto depois
+> de instalar, e o Docker Desktop não inicia sozinho).
+
 ### Um comando
 
 ```bash
